@@ -10,6 +10,8 @@ SECTION MBR vstart=0x7c00 ;程序开始的地址
     mov ss, ax            ;此类的寄存器不同通过立即数赋值，采用ax中转
     mov fs, ax
     mov sp, 0x7c00  ;初始化栈指针，sp也就是32位下的esp
+    mov ax, 0xb800
+    mov gs, ax
 
 ;清屏利用0x10中断的0x6号功能
 ;------------------------
@@ -20,28 +22,24 @@ SECTION MBR vstart=0x7c00 ;程序开始的地址
 
     int 0x10
 
-;获取光标位置
-;---------------------
-    mov ah, 3   ; 3号子功能获取光标位置
-    mov bh, 1   ; bh寄存器存储带获取光标位置的页号,从0开始，此处填1可以看成将光标移动到最开始
-    int 0x10
+   mov byte [gs:0x00],'1'
+   mov byte [gs:0x01],0xA4
 
-;打印字符串`
-;------------------
-    mov ax, message
-    mov bp, ax
+   mov byte [gs:0x02],' '
+   mov byte [gs:0x03],0xA4
 
-    mov cx, 6
-    mov ax, 0x1301
-    mov bx, 0x2
+   mov byte [gs:0x04],'M'
+   mov byte [gs:0x05],0xA4     
 
-    int 0x10
-    
-    message db "My MBR"
+   mov byte [gs:0x06],'B'
+   mov byte [gs:0x07],0xA4
+
+   mov byte [gs:0x08],'R'
+   mov byte [gs:0x09],0xA4
 
     mov eax, LOADER_START_SECTOR    ;起始扇区的lba地址
     mov bx, LOADER_BASE_ADDR        ;写入的地址
-    mov cx, 1                       ;读入的扇区数
+    mov cx, 4                       ;读入的扇区数
     call rd_disk_m_16
 
     jmp LOADER_BASE_ADDR
@@ -54,7 +52,7 @@ rd_disk_m_16:       ;eax=扇区号，cx=读入的扇区数，bx=将数据写入�
 
 ;设置要读取的扇区数
     mov dx, 0x1f2
-    mov al, al
+    mov al, cl
     out dx, al
     mov eax, esi
 
