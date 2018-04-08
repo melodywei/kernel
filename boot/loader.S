@@ -71,6 +71,28 @@ loader_start:
     loop .find_max_mem_area
     jmp .mem_get_ok
 
+  .e820_failed_so_try_e801:
+    mov ax, 0xe801
+    int 0x15
+    
+    ;先算出低15MB的内存
+    mov cx, 0x400 ;将获取到的低15M内存乘1024转化成byte
+    mul cx
+    shl edx, 16
+    and eax, 0xffff ;只取低16位，防止乘法溢出
+    or edx, eax
+    add eax, 0x100000
+    mov esi, edx
+
+    ;再将16MB以上的空间转化成byte为单位
+    xor eax, eax
+    mov ax, bx
+    mov ecx, 0x10000 ;32位下默认被乘数是eax，将获取到的内存乘以64KB转换成byte
+    mul ecx
+    add esi, eax
+    mov edx, esi 
+    jmp .mem_get_ok
+
   .mem_get_ok:
     mov [total_mem_bytes], edx
 
