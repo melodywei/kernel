@@ -42,7 +42,7 @@ SECTION MBR vstart=0x7c00 ;程序开始的地址
     mov cx, 4                       ;读入的扇区数
     call rd_disk_m_16
 
-    jmp LOADER_BASE_ADDR
+    jmp LOADER_BASE_ADDR + 0x300
 
 ;读取n个扇区
 ;---------------------
