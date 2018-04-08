@@ -93,6 +93,17 @@ loader_start:
     mov edx, esi 
     jmp .mem_get_ok
 
+  .e801_failed_so_tyy88:
+    mov ah, 0x88
+    int 0x15
+    and eax, 0xffff
+    mov cx, 0x400
+    mul cx
+    shl edx, 16
+    or edx, eax
+    add edx, 0x100000
+
+
   .mem_get_ok:
     mov [total_mem_bytes], edx
 
