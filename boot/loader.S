@@ -1,7 +1,6 @@
 %include "boot.inc"
 section loader vstart=LOADER_BASE_ADDR
 LOADER_STACK_TOP equ LOADER_BASE_ADDR
-jmp loader_start
 
 
 ; 构建全局描述符表，并填充段描述符，段描述符的大小为8字节，在这里将其分为低4字节与高4字节来定义
@@ -26,24 +25,90 @@ VIDEO_DESC: dd 0x80000007
 
 GDT_SIZE equ   $-GDT_BASE
 GDT_LIMIT equ GDT_SIZE - 1
-times 60 dq 0
+times 60 dq 0 ;dq表示8字节的数据，在这里预留出60个8字节的空间。以便将来扩充
 
 SELECTOR_CODE equ (0x0001<<3) + TI_GDT + RPL0     ; 相当于(CODE_DESC - GDT_BASE)/8 + TI_GDT + RPL0
 SELECTOR_DATA equ (0x0002<<3) + TI_GDT + RPL0     ; 同上
 SELECTOR_VIDEO equ (0x0003<<3) + TI_GDT + RPL0    ; 同上 
 
+;total_mem_bytes 存放获取到的总内存，该变量的地址为  0xb00 = 0x900 + 60 * 8 + 8 * 4;
+total_mem_bytes dd 0
+
 gdt_ptr dw GDT_LIMIT    ;gdt的前2字节是段界限，后4字节是段基址
         dd GDT_BASE
-loadermsg db '2 loader in real.'
+
+ards_buf times 244 db 0
+ards_nr dw 0
 
 loader_start:
-    mov sp, LOADER_BASE_ADDR
-    mov bp, loadermsg
-    mov cx, 17
-    mov ax, 0x1301
-    mov bx, 0x001f
-    mov dx, 0x1800
-    int 0x10
+;int 0x15 eax=0xe820 edx=0x534d4150
+;--------------------------------------
+    xor ebx, ebx    ;将ebx清0
+    mov edx, 0x534d4150 
+    mov di, ards_buf  ;ards结构缓冲区
+  .e820_mem_get_loop:
+    mov eax, 0xe820
+    mov ecx, 20   ;ards地址范围描述符结构大小位20字节
+    int 0x15
+    jc .e820_failed_so_try_e801
+    
+    add di, cx  ;使di增加20字节指向缓冲区中新的ards结构位置
+    inc word [ards_nr] ;记录ards数量
+    cmp ebx, 0  ;如果ebx为0且cf位不为1,说明adrs全部返回
+    jnz .e820_mem_get_loop
+
+    ;在所有ards结构中找出（base_addr_low + length_low)的最大值，即为内存的容量
+    mov cx, [ards_nr]
+    mov ebx, ards_buf
+    xor edx, edx
+  .find_max_mem_area:
+    mov eax, [ebx]  ;base_addr_low
+    add eax, [ebx + 8] ;length_low
+    add ebx, 20
+    cmp edx, eax
+    jge .next_ards
+    mov edx, eax
+  .next_ards:
+    loop .find_max_mem_area
+    jmp .mem_get_ok
+
+  .e820_failed_so_try_e801:
+    mov ax, 0xe801
+    int 0x15
+    jc .e801_failed_so_tyy88
+    
+    ;先算出低15MB的内存
+    mov cx, 0x400 ;将获取到的低15M内存乘1024转化成byte
+    mul cx
+    shl edx, 16
+    and eax, 0xffff ;只取低16位，防止乘法溢出
+    or edx, eax
+    add eax, 0x100000
+    mov esi, edx
+
+    ;再将16MB以上的空间转化成byte为单位
+    xor eax, eax
+    mov ax, bx
+    mov ecx, 0x10000 ;32位下默认被乘数是eax，将获取到的内存乘以64KB转换成byte
+    mul ecx
+    add esi, eax
+    mov edx, esi 
+    jmp .mem_get_ok
+
+  .e801_failed_so_tyy88:
+    mov ah, 0x88
+    int 0x15
+    jc .error_hlt
+    and eax, 0xffff
+    mov cx, 0x400
+    mul cx
+    shl edx, 16
+    or edx, eax
+    add edx, 0x100000
+
+
+  .mem_get_ok:
+    mov [total_mem_bytes], edx
 
 ;---------------------------
 ;准备进入保护模式
@@ -68,6 +133,9 @@ loader_start:
 
     jmp SELECTOR_CODE:p_mode_start
 
+
+.error_hlt:
+    hlt
 
 [bits 32]
 p_mode_start:
