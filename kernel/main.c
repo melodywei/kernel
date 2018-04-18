@@ -1,19 +1,12 @@
 #include "../lib/kernel/print.h"
-
+#include "init.h"
 
 
 int main() 
 {
     put_str("I am kernel\n");
-    put_int(0);
-    put_char('\n');
-    put_int(9);
-    put_char('\n');
-    put_int(0x00021a3f);
-    put_char('\n');
-    put_int(0x12345678);
-    put_char('\n');
-    put_int(0x00000000);
+    init_all();
+    asm volatile("sti");
     while(1);
 
     return 0;

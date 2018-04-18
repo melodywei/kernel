@@ -3,6 +3,10 @@
 
  .note.GNU-stack
                 0x0000000000000000        0x0 build/main.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 build/init.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 build/interrupt.o
 
 内存配置
 
@@ -14,6 +18,9 @@
 段 .text 的地址设置为 0xc0001500
 LOAD build/main.o
 LOAD build/print.o
+LOAD build/init.o
+LOAD build/interrupt.o
+LOAD build/kernel.o
                 [!provide]                        PROVIDE (__executable_start, 0x8048000)
                 0x0000000008048094                . = (0x8048000 + SIZEOF_HEADERS)
 
@@ -78,19 +85,25 @@ LOAD build/print.o
 .plt.got
  *(.plt.got)
 
-.text           0x00000000c0001500      0x1ee
+.text           0x00000000c0001500      0x67e
  *(.text.unlikely .text.*_unlikely .text.unlikely.*)
  *(.text.exit .text.exit.*)
  *(.text.startup .text.startup.*)
  *(.text.hot .text.hot.*)
  *(.text .stub .text.* .gnu.linkonce.t.*)
- .text          0x00000000c0001500       0x9e build/main.o
+ .text          0x00000000c0001500       0x29 build/main.o
                 0x00000000c0001500                main
- *fill*         0x00000000c000159e        0x2 
- .text          0x00000000c00015a0      0x14e build/print.o
-                0x00000000c00015a0                put_str
-                0x00000000c00015be                put_char
-                0x00000000c000168b                put_int
+ *fill*         0x00000000c0001529        0x7 
+ .text          0x00000000c0001530      0x14e build/print.o
+                0x00000000c0001530                put_str
+                0x00000000c000154e                put_char
+                0x00000000c000161b                put_int
+ .text          0x00000000c000167e       0x1e build/init.o
+                0x00000000c000167e                init_all
+ .text          0x00000000c000169c      0x1a8 build/interrupt.o
+                0x00000000c00017f5                idt_init
+ *fill*         0x00000000c0001844        0xc 
+ .text          0x00000000c0001850      0x32e build/kernel.o
  *(.gnu.warning)
 
 .fini
@@ -99,9 +112,11 @@ LOAD build/print.o
                 [!provide]                        PROVIDE (_etext, .)
                 [!provide]                        PROVIDE (etext, .)
 
-.rodata         0x00000000c00016ee        0xd
+.rodata         0x00000000c0001b7e       0x61
  *(.rodata .rodata.* .gnu.linkonce.r.*)
- .rodata        0x00000000c00016ee        0xd build/main.o
+ .rodata        0x00000000c0001b7e        0xd build/main.o
+ .rodata        0x00000000c0001b8b        0xa build/init.o
+ .rodata        0x00000000c0001b95       0x4a build/interrupt.o
 
 .rodata1
  *(.rodata1)
@@ -110,9 +125,13 @@ LOAD build/print.o
  *(.eh_frame_hdr)
  *(.eh_frame_entry .eh_frame_entry.*)
 
-.eh_frame       0x00000000c00016fc       0x3c
+.eh_frame       0x00000000c0001be0       0xfc
  *(.eh_frame)
- .eh_frame      0x00000000c00016fc       0x3c build/main.o
+ .eh_frame      0x00000000c0001be0       0x3c build/main.o
+ .eh_frame      0x00000000c0001c1c       0x20 build/init.o
+                                         0x38 (松开之前的大小)
+ .eh_frame      0x00000000c0001c3c       0xa0 build/interrupt.o
+                                         0xb8 (松开之前的大小)
  *(.eh_frame.*)
 
 .gcc_except_table
@@ -123,7 +142,7 @@ LOAD build/print.o
 
 .exception_ranges
  *(.exception_ranges .exception_ranges*)
-                0x00000000c0002738                . = DATA_SEGMENT_ALIGN (0x1000, 0x1000)
+                0x00000000c0002cdc                . = DATA_SEGMENT_ALIGN (0x1000, 0x1000)
 
 .eh_frame
  *(.eh_frame)
@@ -145,18 +164,18 @@ LOAD build/print.o
  *(.tbss .tbss.* .gnu.linkonce.tb.*)
  *(.tcommon)
 
-.preinit_array  0x00000000c0002738        0x0
+.preinit_array  0x00000000c0002cdc        0x0
                 [!provide]                        PROVIDE (__preinit_array_start, .)
  *(.preinit_array)
                 [!provide]                        PROVIDE (__preinit_array_end, .)
 
-.init_array     0x00000000c0002738        0x0
+.init_array     0x00000000c0002cdc        0x0
                 [!provide]                        PROVIDE (__init_array_start, .)
  *(SORT(.init_array.*) SORT(.ctors.*))
  *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
                 [!provide]                        PROVIDE (__init_array_end, .)
 
-.fini_array     0x00000000c0002738        0x0
+.fini_array     0x00000000c0002cdc        0x0
                 [!provide]                        PROVIDE (__fini_array_start, .)
  *(SORT(.fini_array.*) SORT(.dtors.*))
  *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
@@ -189,37 +208,43 @@ LOAD build/print.o
 .got
  *(.got)
  *(.igot)
-                0x00000000c0002738                . = DATA_SEGMENT_RELRO_END (., (SIZEOF (.got.plt) >= 0xc)?0xc:0x0)
+                0x00000000c0002cdc                . = DATA_SEGMENT_RELRO_END (., (SIZEOF (.got.plt) >= 0xc)?0xc:0x0)
 
-.got.plt        0x00000000c0002738        0x0
+.got.plt        0x00000000c0002cdc        0x0
  *(.got.plt)
  *(.igot.plt)
- .igot.plt      0x00000000c0002738        0x0 build/main.o
+ .igot.plt      0x00000000c0002cdc        0x0 build/main.o
 
-.data           0x00000000c0002738        0x8
+.data           0x00000000c0002cdc       0x9e
  *(.data .data.* .gnu.linkonce.d.*)
- .data          0x00000000c0002738        0x0 build/main.o
- .data          0x00000000c0002738        0x8 build/print.o
+ .data          0x00000000c0002cdc        0x0 build/main.o
+ .data          0x00000000c0002cdc        0x8 build/print.o
+ .data          0x00000000c0002ce4        0x0 build/init.o
+ .data          0x00000000c0002ce4        0x0 build/interrupt.o
+ .data          0x00000000c0002ce4       0x96 build/kernel.o
+                0x00000000c0002cf6                intr_entry_table
 
 .data1
  *(.data1)
-                0x00000000c0002740                _edata = .
+                0x00000000c0002d7a                _edata = .
                 [!provide]                        PROVIDE (edata, .)
-                0x00000000c0002740                . = .
-                0x00000000c0002740                __bss_start = .
+                0x00000000c0002d7a                . = .
+                0x00000000c0002d7a                __bss_start = .
 
-.bss            0x00000000c0002740        0x0
+.bss            0x00000000c0002d80      0x108
  *(.dynbss)
  *(.bss .bss.* .gnu.linkonce.b.*)
- .bss           0x00000000c0002740        0x0 build/main.o
+ .bss           0x00000000c0002d80        0x0 build/main.o
+ .bss           0x00000000c0002d80        0x0 build/init.o
+ .bss           0x00000000c0002d80      0x108 build/interrupt.o
  *(COMMON)
-                0x00000000c0002740                . = ALIGN ((. != 0x0)?0x4:0x1)
-                0x00000000c0002740                . = ALIGN (0x4)
-                0x00000000c0002740                . = SEGMENT_START ("ldata-segment", .)
-                0x00000000c0002740                . = ALIGN (0x4)
-                0x00000000c0002740                _end = .
+                0x00000000c0002e88                . = ALIGN ((. != 0x0)?0x4:0x1)
+                0x00000000c0002e88                . = ALIGN (0x4)
+                0x00000000c0002e88                . = SEGMENT_START ("ldata-segment", .)
+                0x00000000c0002e88                . = ALIGN (0x4)
+                0x00000000c0002e88                _end = .
                 [!provide]                        PROVIDE (end, .)
-                0x00000000c0002740                . = DATA_SEGMENT_END (.)
+                0x00000000c0002e88                . = DATA_SEGMENT_END (.)
 
 .stab
  *(.stab)
@@ -243,6 +268,8 @@ LOAD build/print.o
  *(.comment)
  .comment       0x0000000000000000       0x34 build/main.o
                                          0x35 (松开之前的大小)
+ .comment       0x0000000000000034       0x35 build/init.o
+ .comment       0x0000000000000034       0x35 build/interrupt.o
 
 .debug
  *(.debug)
