@@ -6,7 +6,7 @@ int main()
 {
     put_str("I am kernel\n");
     init_all();
-    ASSERT(1==2)
+    //ASSERT(1==2)
     while(1);
 
     return 0;
