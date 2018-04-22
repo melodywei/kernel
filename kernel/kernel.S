@@ -3,6 +3,7 @@
 %define ZERO push 0 ;当没有错误码时，为了保证栈结构的统一，手动push4字节
 
 extern put_str
+extern idt_table
 
 section .data
 intr_str db "interrupt occur!", 0xa, 0
@@ -12,23 +13,40 @@ intr_entry_table:
 
 %macro VECTOR 2
 section .text
-intr%1entry:
-    %2
-    push intr_str
-    call put_str
-    add esp, 4
+intr%1entry:        ;每个中断处理程序都要圧入中断向量号
+    %2  ;如果有错误码，会圧在eip后面
+    push ds
+    push es
+    push fs
+    push gs
+    pushad
 
-    mov al, 0x20
-    out 0xa0, al
-    out 0x20, al
+    ;如果时从片上进入中断，除了往从片上发送EOI外，还要往主片上发送
+    mov al, 0x20    ;中断结束命令EOI
+    out 0xa0, al    ;向从片发送
+    out 0x20, al    ;向主片发送
 
-    add esp, 4
-    iret
+    push %1 ;参数1为中断向量号
+    call [idt_table + %1 * 4] ; 调用中断处理程序
+    jmp intr_exit;
 
 section .data
     dd intr%1entry
 
 %endmacro
+
+section .text
+global intr_exit
+intr_exit:
+    add esp, 4  ;跳过中断号
+    popad
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    add esp, 4 ;跳过error_code
+    iretd
+
 
 ;对宏进行调用
 

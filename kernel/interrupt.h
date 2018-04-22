@@ -6,6 +6,6 @@
 typedef void * intr_handler;
 
 
-
+void idt_init();
 
 #endif //!_KERNEL_INTERRUPT_H_
