@@ -2,14 +2,16 @@
 #include "init.h"
 #include "debug.h"
 #include "memory.h"
+#include "../thread/thread.h"
+
+void k_thread(void *);
 
 int main() 
 {
     put_str("I am kernel\n");
     init_all();
-    void *vaddr = get_kernel_pages(3);
-    put_str("\n get_kernel_page start vaddr is: ");
-    put_int((uint32_t)vaddr);
+    
+    thread_start("k_thread_a", 31, k_thread, "argA ");
     
 
 
@@ -18,3 +20,11 @@ int main()
     return 0;
 }
 
+void k_thread(void *arg)
+{
+    char *para = (char *)arg;
+    while(true)
+    {
+        put_str(para);
+    }
+}

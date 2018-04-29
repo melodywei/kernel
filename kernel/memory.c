@@ -11,7 +11,7 @@
 // 0xc0009f00为内核主线程的栈顶，0xc0009e00位内核主线程的pcb
 // 位图地址安排在0xc0009a00，也就是说0xc0009e00 - 0xc0009a00 = 0x4000，可以存放4个页框的位图，共512MB
 
-#define PG_SIZE 4096
+
 #define MEM_BITMAP_BASE 0xc0009a00
 #define K_HEAP_START 0xc0100000 // 内核所用堆的起始地址，因为loader通过页表映射在了低端1MB的空间中，也就是0xc0000000~0xc000ffff映射到0x0~0xffff,所以这里需要跨过这部分空间
 
@@ -229,7 +229,7 @@ void mem_init()
     put_str("mem_init start\n");
 
     // 物理内存的大小放在地址0xb00处
-    uint32_t mem_bytes_total = *((uint32_t*)0xb00);
+    uint32_t mem_bytes_total = *((uint32_t*)0xc0000b00);
 
     mem_pool_init(mem_bytes_total);
 

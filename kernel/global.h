@@ -30,4 +30,6 @@
 #define true 1
 #define false 0
 
+#define PG_SIZE 4096
+
 #endif //!_KERNEL_GLOBAL_H_
