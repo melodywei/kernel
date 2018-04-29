@@ -90,4 +90,8 @@ task_struct *running_thread();
 void schedule();
 
 void thread_init();
+
+void thread_unblock(task_struct* pthread);
+void thread_block(task_status stat);
+
 #endif //!_THREAD_THREAD_H_

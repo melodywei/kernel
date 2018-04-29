@@ -4,6 +4,7 @@
 #include "memory.h"
 #include "../thread/thread.h"
 #include "interrupt.h"
+#include "../device/console.h"
 
 void k_thread(void *);
 
@@ -20,9 +21,7 @@ int main()
 
     while(1)
     {
-        intr_disable();
-        put_str("Main ");
-        intr_enable();
+        console_put_str("Main ");
     }
 
     return 0;
@@ -33,8 +32,6 @@ void k_thread(void *arg)
     char *para = (char *)arg;
     while(true)
     {
-        intr_disable();
-        put_str(para);
-        intr_enable();
+        console_put_str(arg);
     }
 }
