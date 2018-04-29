@@ -2,9 +2,11 @@
 #define _THREAD_THREAD_H_
 
 #include "../lib/stdint.h"
+#include "../lib/kernel/list.h"
 
 typedef void thread_func(void*);
 
+// 线程的状态
 typedef enum tag_task_status
 {
     TASK_RUNNING,
@@ -52,8 +54,10 @@ typedef struct tag_thread_stack
     uint32_t edi;
     uint32_t esi;
 
+
     void (*eip)(thread_func *func, void *func_arg);
-    void (*unused_retaddr);
+
+    void *unused_retaddr;
     thread_func *function;
     void *func_arg;
 }thread_stack;
@@ -61,15 +65,29 @@ typedef struct tag_thread_stack
 // 线程pcb
 typedef struct tag_task_struct
 {
-    uint32_t *self_kstack;
-    task_status status;
-    uint8_t priority;
+    uint32_t *self_kstack; // 内核线程的栈顶地址
+    task_status status;    // 当前线程的状态
     char name[16];
-    uint32_t stack_magic;
+    uint8_t priority;
+    uint8_t ticks;  // 线程执行的时间
+
+    uint32_t elapsed_ticks;  // 线程已经执行的时间
+
+    struct list_elem general_tag;
+
+    struct list_elem all_list_tag;
+    uint32_t *pgdir;
+
+   
+    uint32_t stack_magic;   // 栈的边界标记，用来检测栈溢出
 }task_struct;
 
 void thread_create(task_struct* pthread, thread_func function, void* func_arg);
 void init_thread(task_struct* pthread, char* name, int prio);
 task_struct* thread_start(char* name, int prio, thread_func function, void*  func_arg);
 
+task_struct *running_thread();
+void schedule();
+
+void thread_init();
 #endif //!_THREAD_THREAD_H_

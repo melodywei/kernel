@@ -76,9 +76,32 @@ static void general_intr_handler(uint8_t vec_nr)
         return;
     }
 
-    put_str("int vector: 0x");
-    put_int(vec_nr);
-    put_str("\n");
+    /* 将光标置为0,从屏幕左上角清出一片打印异常信息的区域,方便阅读 */
+    set_cursor(0);
+    int cursor_pos = 0;
+    while(cursor_pos < 320)
+    {
+        put_char(' ');
+        cursor_pos++;
+    }
+  
+    set_cursor(0);    // 重置光标为屏幕左上角
+    put_str("!!!!!!!      excetion message begin  !!!!!!!!\n");
+
+    set_cursor(88);  // 从第2行第8个字符开始打印
+    put_str(intr_name[vec_nr]);
+    if (vec_nr == 14) 
+    {    // 若为Pagefault,将缺失的地址打印出来并悬停
+        int page_fault_vaddr = 0;
+        asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));   // cr2是存放造成page_fault的地址
+        put_str("\npage fault addr is ");
+        put_int(page_fault_vaddr);
+    }
+    put_str("\n!!!!!!!      excetion message end    !!!!!!!!\n");
+
+    // 能进入中断处理程序就表示已经处在关中断情况下,
+    // 不会出现调度进程的情况。故下面的死循环不会再被中断。
+    while(1);
 }
 
 // 完成一般中断处理函数注册及异常名称注册
@@ -151,7 +174,7 @@ enum intr_status intr_disable()
 }
 
 // 设置中断状态
-enum intr_status intr_set_stauts(enum intr_status status)
+enum intr_status intr_set_status(enum intr_status status)
 {
     return status & INTR_ON ? intr_enable() : intr_disable();
 }
@@ -164,6 +187,11 @@ static void idt_desc_init()
         make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
     }
     put_str("   idt_desc_init done\n");
+}
+
+void register_handler(uint8_t vec_no, intr_handler function)
+{
+    idt_table[vec_no] = function;
 }
 
 void idt_init()

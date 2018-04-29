@@ -23,6 +23,8 @@ enum intr_status intr_enable();
 enum intr_status intr_disable();
 
 // 设置中断状态
-enum intr_status intr_set_stauts(enum intr_status status);
+enum intr_status intr_set_status(enum intr_status status);
+
+void register_handler(uint8_t vec_no, intr_handler function);
 
 #endif //!_KERNEL_INTERRUPT_H_
