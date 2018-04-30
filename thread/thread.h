@@ -3,6 +3,8 @@
 
 #include "../lib/stdint.h"
 #include "../lib/kernel/list.h"
+#include "../lib/kernel/bitmap.h"
+#include "../kernel/memory.h"
 
 typedef void thread_func(void*);
 
@@ -77,10 +79,13 @@ typedef struct tag_task_struct
 
     struct list_elem all_list_tag;
     uint32_t *pgdir;
-
+    struct virtual_addr userprog_vaddr;
    
     uint32_t stack_magic;   // 栈的边界标记，用来检测栈溢出
 }task_struct;
+
+extern struct list thread_ready_list;
+extern struct list thread_all_list;
 
 void thread_create(task_struct* pthread, thread_func function, void* func_arg);
 void init_thread(task_struct* pthread, char* name, int prio);

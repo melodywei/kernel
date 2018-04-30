@@ -7,6 +7,7 @@
 #include "../kernel/debug.h"
 #include "../kernel/memory.h"
 #include "../lib/kernel/print.h"
+#include "../userprog/process.h"
 
 task_struct *main_thread;
 struct list thread_ready_list;
@@ -128,6 +129,8 @@ void schedule()
     thread_tag = list_pop(&thread_ready_list);
     task_struct* next = elem2entry(task_struct, general_tag, thread_tag);
     next->status = TASK_RUNNING;
+
+    process_activate(next);
     switch_to(cur, next);
 
 }
