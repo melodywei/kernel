@@ -8,6 +8,8 @@
 
 typedef void thread_func(void*);
 
+typedef int16_t pid_t;
+
 // 线程的状态
 typedef enum tag_task_status
 {
@@ -68,6 +70,7 @@ typedef struct tag_thread_stack
 typedef struct tag_task_struct
 {
     uint32_t *self_kstack; // 内核线程的栈顶地址
+    pid_t pid;
     task_status status;    // 当前线程的状态
     char name[16];
     uint8_t priority;

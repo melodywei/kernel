@@ -9,10 +9,12 @@
 #define PIC_S_CTRL 0xa0 // 从片的控制端口是0xa0
 #define PIC_S_DATA 0xa1 // 从片的数据端口是0xa1
 
-#define IDT_DESC_CNT 0x30 // 目前总共支持的中断数
+#define IDT_DESC_CNT 0x81 // 目前总共支持的中断数
 
 #define EFLAGS_IF 0x00000200 // eflags寄存器中的if位为1
 #define GET_EFLAGS(EFLAG_VAR) asm volatile("pushfl; popl %0" : "=g"(EFLAG_VAR))
+
+extern uint32_t syscall_handler();
 
 /*中断门描述符结构体*/
 struct gate_desc
@@ -73,11 +75,14 @@ static void make_idt_desc(struct gate_desc *p_gdesc, uint8_t attr, intr_handler 
 /*初始化中断描述符表*/
 static void idt_desc_init(void)
 {
-	int i;
-	for (i = 0; i < IDT_DESC_CNT; i++)
+	int lastindex = IDT_DESC_CNT - 1;
+	for (int i = 0; i < IDT_DESC_CNT - 1; i++)
 	{
 		make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
 	}
+
+	make_idt_desc(&idt[lastindex], IDT_DESC_ATTR_DPL3, syscall_handler);
+
 	put_str("   idt_desc_init done\n");
 }
 
@@ -118,9 +123,9 @@ static void general_intr_handler(uint8_t vec_nr)
 
 /* 完成一般中断处理函数注册及异常名称注册 */
 static void exception_init(void)
-{ // 完成一般中断处理函数注册及异常名称注册
-	int i;
-	for (i = 0; i < IDT_DESC_CNT; i++)
+{ 
+	// 完成一般中断处理函数注册及异常名称注册	
+	for (int i = 0; i < IDT_DESC_CNT; i++)
 	{
 
 		/* idt_table数组中的函数是在进入中断后根据中断向量号调用的,

@@ -8,13 +8,25 @@
 #include "../kernel/memory.h"
 #include "../lib/kernel/print.h"
 #include "../userprog/process.h"
+#include "../thread/sync.h"
 
 task_struct *main_thread;
 struct list thread_ready_list;
 struct list thread_all_list;
 static struct list_elem *thread_tag;
 
+struct lock pid_lock;
+
 extern void switch_to(task_struct *cur, task_struct *next);
+
+static pid_t allocate_pid()
+{
+    static pid_t next_pid = 0;
+    lock_acquire(&pid_lock);
+    next_pid++;
+    lock_release(&pid_lock);
+    return next_pid;
+}
 
 task_struct *running_thread()
 {
@@ -51,6 +63,7 @@ void init_thread(task_struct* pthread, char* name, int prio)
 {
     memset(pthread, 0, sizeof(*pthread));
     strcpy(pthread->name, name);
+    pthread->pid = allocate_pid();
 
     if (pthread == main_thread)
     {
@@ -178,6 +191,8 @@ void thread_init()
     put_str("thread_init start\n");
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
+
+    lock_init(&pid_lock);
 
     make_main_thread();
     put_str("thread_init done\n");
