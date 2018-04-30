@@ -53,6 +53,8 @@ pid_lock            0x1c              build/thread.o
                 0x0000000000000000        0x0 build/syscall.o
  .note.GNU-stack
                 0x0000000000000000        0x0 build/syscall-init.o
+ .note.GNU-stack
+                0x0000000000000000        0x0 build/stdio.o
 
 内存配置
 
@@ -83,6 +85,7 @@ LOAD build/tss.o
 LOAD build/process.o
 LOAD build/syscall.o
 LOAD build/syscall-init.o
+LOAD build/stdio.o
                 [!provide]                        PROVIDE (__executable_start, 0x8048000)
                 0x0000000008048094                . = (0x8048000 + SIZEOF_HEADERS)
 
@@ -147,7 +150,7 @@ LOAD build/syscall-init.o
 .plt.got
  *(.plt.got)
 
-.text           0x00000000c0001500     0x33c8
+.text           0x00000000c0001500     0x369c
  *(.text.unlikely .text.*_unlikely .text.unlikely.*)
  *(.text.exit .text.exit.*)
  *(.text.startup .text.startup.*)
@@ -262,11 +265,17 @@ LOAD build/syscall-init.o
                 0x00000000c00046a1                create_page_dir
                 0x00000000c0004719                create_user_vaddr_bitmap
                 0x00000000c0004765                process_execute
- .text          0x00000000c000486e       0x15 build/syscall.o
+ .text          0x00000000c000486e       0x34 build/syscall.o
                 0x00000000c000486e                getpid
- .text          0x00000000c0004883       0x45 build/syscall-init.o
-                0x00000000c0004883                sys_getpid
-                0x00000000c0004895                syscall_init
+                0x00000000c0004883                write
+ .text          0x00000000c00048a2       0x73 build/syscall-init.o
+                0x00000000c00048a2                sys_getpid
+                0x00000000c00048b4                sys_write
+                0x00000000c00048d8                syscall_init
+ .text          0x00000000c0004915      0x287 build/stdio.o
+                0x00000000c0004994                vsprintf
+                0x00000000c0004b11                sprintf
+                0x00000000c0004b41                printf
  *(.gnu.warning)
 
 .fini
@@ -275,31 +284,31 @@ LOAD build/syscall-init.o
                 [!provide]                        PROVIDE (_etext, .)
                 [!provide]                        PROVIDE (etext, .)
 
-.rodata         0x00000000c00048c8      0xd13
+.rodata         0x00000000c0004b9c      0xd13
  *(.rodata .rodata.* .gnu.linkonce.r.*)
- .rodata        0x00000000c00048c8       0x99 build/main.o
- .rodata        0x00000000c0004961        0xa build/init.o
- *fill*         0x00000000c000496b        0x1 
- .rodata        0x00000000c000496c      0x2cd build/interrupt.o
- *fill*         0x00000000c0004c39        0x3 
- .rodata        0x00000000c0004c3c       0x6b build/timer.o
- .rodata        0x00000000c0004ca7       0x3c build/debug.o
- *fill*         0x00000000c0004ce3        0x1 
- .rodata        0x00000000c0004ce4      0x1cb build/memory.o
- *fill*         0x00000000c0004eaf        0x1 
- .rodata        0x00000000c0004eb0       0x67 build/bitmap.o
- *fill*         0x00000000c0004f17        0x1 
- .rodata        0x00000000c0004f18       0xc0 build/string.o
- .rodata        0x00000000c0004fd8      0x2bf build/thread.o
- *fill*         0x00000000c0005297        0x1 
- .rodata        0x00000000c0005298      0x135 build/sync.o
- .rodata        0x00000000c00053cd       0x36 build/keyboard.o
- *fill*         0x00000000c0005403        0x1 
- .rodata        0x00000000c0005404       0xa8 build/ioqueue.o
- .rodata        0x00000000c00054ac       0x27 build/tss.o
- *fill*         0x00000000c00054d3        0x1 
- .rodata        0x00000000c00054d4       0xe0 build/process.o
- .rodata        0x00000000c00055b4       0x27 build/syscall-init.o
+ .rodata        0x00000000c0004b9c       0x99 build/main.o
+ .rodata        0x00000000c0004c35        0xa build/init.o
+ *fill*         0x00000000c0004c3f        0x1 
+ .rodata        0x00000000c0004c40      0x2cd build/interrupt.o
+ *fill*         0x00000000c0004f0d        0x3 
+ .rodata        0x00000000c0004f10       0x6b build/timer.o
+ .rodata        0x00000000c0004f7b       0x3c build/debug.o
+ *fill*         0x00000000c0004fb7        0x1 
+ .rodata        0x00000000c0004fb8      0x1cb build/memory.o
+ *fill*         0x00000000c0005183        0x1 
+ .rodata        0x00000000c0005184       0x67 build/bitmap.o
+ *fill*         0x00000000c00051eb        0x1 
+ .rodata        0x00000000c00051ec       0xc0 build/string.o
+ .rodata        0x00000000c00052ac      0x2bf build/thread.o
+ *fill*         0x00000000c000556b        0x1 
+ .rodata        0x00000000c000556c      0x135 build/sync.o
+ .rodata        0x00000000c00056a1       0x36 build/keyboard.o
+ *fill*         0x00000000c00056d7        0x1 
+ .rodata        0x00000000c00056d8       0xa8 build/ioqueue.o
+ .rodata        0x00000000c0005780       0x27 build/tss.o
+ *fill*         0x00000000c00057a7        0x1 
+ .rodata        0x00000000c00057a8       0xe0 build/process.o
+ .rodata        0x00000000c0005888       0x27 build/syscall-init.o
 
 .rodata1
  *(.rodata1)
@@ -308,43 +317,45 @@ LOAD build/syscall-init.o
  *(.eh_frame_hdr)
  *(.eh_frame_entry .eh_frame_entry.*)
 
-.eh_frame       0x00000000c00055dc      0xd50
+.eh_frame       0x00000000c00058b0      0xe18
  *(.eh_frame)
- .eh_frame      0x00000000c00055dc       0xac build/main.o
- .eh_frame      0x00000000c0005688       0x20 build/init.o
+ .eh_frame      0x00000000c00058b0       0xac build/main.o
+ .eh_frame      0x00000000c000595c       0x20 build/init.o
                                          0x38 (松开之前的大小)
- .eh_frame      0x00000000c00056a8      0x188 build/interrupt.o
+ .eh_frame      0x00000000c000597c      0x188 build/interrupt.o
                                         0x1a0 (松开之前的大小)
- .eh_frame      0x00000000c0005830       0x88 build/timer.o
+ .eh_frame      0x00000000c0005b04       0x88 build/timer.o
                                          0xa0 (松开之前的大小)
- .eh_frame      0x00000000c00058b8       0x1c build/debug.o
+ .eh_frame      0x00000000c0005b8c       0x1c build/debug.o
                                          0x34 (松开之前的大小)
- .eh_frame      0x00000000c00058d4      0x180 build/memory.o
+ .eh_frame      0x00000000c0005ba8      0x180 build/memory.o
                                         0x198 (松开之前的大小)
- .eh_frame      0x00000000c0005a54       0x8c build/bitmap.o
+ .eh_frame      0x00000000c0005d28       0x8c build/bitmap.o
                                          0xa4 (松开之前的大小)
- .eh_frame      0x00000000c0005ae0      0x140 build/string.o
+ .eh_frame      0x00000000c0005db4      0x140 build/string.o
                                         0x158 (松开之前的大小)
- .eh_frame      0x00000000c0005c20      0x160 build/thread.o
+ .eh_frame      0x00000000c0005ef4      0x160 build/thread.o
                                         0x178 (松开之前的大小)
- .eh_frame      0x00000000c0005d80      0x140 build/list.o
+ .eh_frame      0x00000000c0006054      0x140 build/list.o
                                         0x158 (松开之前的大小)
- .eh_frame      0x00000000c0005ec0       0xc0 build/console.o
+ .eh_frame      0x00000000c0006194       0xc0 build/console.o
                                          0xd8 (松开之前的大小)
- .eh_frame      0x00000000c0005f80       0xc8 build/sync.o
+ .eh_frame      0x00000000c0006254       0xc8 build/sync.o
                                          0xe0 (松开之前的大小)
- .eh_frame      0x00000000c0006048       0x60 build/keyboard.o
+ .eh_frame      0x00000000c000631c       0x60 build/keyboard.o
                                          0x78 (松开之前的大小)
- .eh_frame      0x00000000c00060a8      0x100 build/ioqueue.o
+ .eh_frame      0x00000000c000637c      0x100 build/ioqueue.o
                                         0x118 (松开之前的大小)
- .eh_frame      0x00000000c00061a8       0x64 build/tss.o
+ .eh_frame      0x00000000c000647c       0x64 build/tss.o
                                          0x7c (松开之前的大小)
- .eh_frame      0x00000000c000620c       0xc0 build/process.o
+ .eh_frame      0x00000000c00064e0       0xc0 build/process.o
                                          0xd8 (松开之前的大小)
- .eh_frame      0x00000000c00062cc       0x20 build/syscall.o
-                                         0x38 (松开之前的大小)
- .eh_frame      0x00000000c00062ec       0x40 build/syscall-init.o
-                                         0x58 (松开之前的大小)
+ .eh_frame      0x00000000c00065a0       0x44 build/syscall.o
+                                         0x5c (松开之前的大小)
+ .eh_frame      0x00000000c00065e4       0x60 build/syscall-init.o
+                                         0x78 (松开之前的大小)
+ .eh_frame      0x00000000c0006644       0x84 build/stdio.o
+                                         0x9c (松开之前的大小)
  *(.eh_frame.*)
 
 .gcc_except_table
@@ -355,7 +366,7 @@ LOAD build/syscall-init.o
 
 .exception_ranges
  *(.exception_ranges .exception_ranges*)
-                0x00000000c000732c                . = DATA_SEGMENT_ALIGN (0x1000, 0x1000)
+                0x00000000c0007000                . = DATA_SEGMENT_ALIGN (0x1000, 0x1000)
 
 .eh_frame
  *(.eh_frame)
@@ -377,18 +388,18 @@ LOAD build/syscall-init.o
  *(.tbss .tbss.* .gnu.linkonce.tb.*)
  *(.tcommon)
 
-.preinit_array  0x00000000c000732c        0x0
+.preinit_array  0x00000000c0007000        0x0
                 [!provide]                        PROVIDE (__preinit_array_start, .)
  *(.preinit_array)
                 [!provide]                        PROVIDE (__preinit_array_end, .)
 
-.init_array     0x00000000c000732c        0x0
+.init_array     0x00000000c0007000        0x0
                 [!provide]                        PROVIDE (__init_array_start, .)
  *(SORT(.init_array.*) SORT(.ctors.*))
  *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
                 [!provide]                        PROVIDE (__init_array_end, .)
 
-.fini_array     0x00000000c000732c        0x0
+.fini_array     0x00000000c0007000        0x0
                 [!provide]                        PROVIDE (__fini_array_start, .)
  *(SORT(.fini_array.*) SORT(.dtors.*))
  *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
@@ -421,102 +432,104 @@ LOAD build/syscall-init.o
 .got
  *(.got)
  *(.igot)
-                0x00000000c000732c                . = DATA_SEGMENT_RELRO_END (., (SIZEOF (.got.plt) >= 0xc)?0xc:0x0)
+                0x00000000c0007000                . = DATA_SEGMENT_RELRO_END (., (SIZEOF (.got.plt) >= 0xc)?0xc:0x0)
 
-.got.plt        0x00000000c000732c        0x0
+.got.plt        0x00000000c0007000        0x0
  *(.got.plt)
  *(.igot.plt)
- .igot.plt      0x00000000c000732c        0x0 build/main.o
+ .igot.plt      0x00000000c0007000        0x0 build/main.o
 
-.data           0x00000000c0007340      0x156
+.data           0x00000000c0007000      0x156
  *(.data .data.* .gnu.linkonce.d.*)
- .data          0x00000000c0007340        0x0 build/main.o
- .data          0x00000000c0007340        0x8 build/print.o
- .data          0x00000000c0007348        0x0 build/init.o
- .data          0x00000000c0007348        0x0 build/interrupt.o
- .data          0x00000000c0007348       0xd2 build/kernel.o
-                0x00000000c000735a                intr_entry_table
- .data          0x00000000c000741a        0x0 build/timer.o
- .data          0x00000000c000741a        0x0 build/debug.o
- .data          0x00000000c000741a        0x0 build/memory.o
- .data          0x00000000c000741a        0x0 build/bitmap.o
- .data          0x00000000c000741a        0x0 build/string.o
- .data          0x00000000c000741a        0x0 build/thread.o
- .data          0x00000000c000741a        0x0 build/list.o
- .data          0x00000000c000741a        0x0 build/console.o
- .data          0x00000000c000741a        0x0 build/sync.o
- *fill*         0x00000000c000741a        0x6 
- .data          0x00000000c0007420       0x76 build/keyboard.o
- .data          0x00000000c0007496        0x0 build/ioqueue.o
- .data          0x00000000c0007496        0x0 build/tss.o
- .data          0x00000000c0007496        0x0 build/process.o
- .data          0x00000000c0007496        0x0 build/syscall.o
- .data          0x00000000c0007496        0x0 build/syscall-init.o
+ .data          0x00000000c0007000        0x0 build/main.o
+ .data          0x00000000c0007000        0x8 build/print.o
+ .data          0x00000000c0007008        0x0 build/init.o
+ .data          0x00000000c0007008        0x0 build/interrupt.o
+ .data          0x00000000c0007008       0xd2 build/kernel.o
+                0x00000000c000701a                intr_entry_table
+ .data          0x00000000c00070da        0x0 build/timer.o
+ .data          0x00000000c00070da        0x0 build/debug.o
+ .data          0x00000000c00070da        0x0 build/memory.o
+ .data          0x00000000c00070da        0x0 build/bitmap.o
+ .data          0x00000000c00070da        0x0 build/string.o
+ .data          0x00000000c00070da        0x0 build/thread.o
+ .data          0x00000000c00070da        0x0 build/list.o
+ .data          0x00000000c00070da        0x0 build/console.o
+ .data          0x00000000c00070da        0x0 build/sync.o
+ *fill*         0x00000000c00070da        0x6 
+ .data          0x00000000c00070e0       0x76 build/keyboard.o
+ .data          0x00000000c0007156        0x0 build/ioqueue.o
+ .data          0x00000000c0007156        0x0 build/tss.o
+ .data          0x00000000c0007156        0x0 build/process.o
+ .data          0x00000000c0007156        0x0 build/syscall.o
+ .data          0x00000000c0007156        0x0 build/syscall-init.o
+ .data          0x00000000c0007156        0x0 build/stdio.o
 
 .data1
  *(.data1)
-                0x00000000c0007496                _edata = .
+                0x00000000c0007156                _edata = .
                 [!provide]                        PROVIDE (edata, .)
-                0x00000000c0007496                . = .
-                0x00000000c0007496                __bss_start = .
+                0x00000000c0007156                . = .
+                0x00000000c0007156                __bss_start = .
 
-.bss            0x00000000c00074a0      0xae0
+.bss            0x00000000c0007160      0xae0
  *(.dynbss)
  *(.bss .bss.* .gnu.linkonce.b.*)
- .bss           0x00000000c00074a0       0x10 build/main.o
-                0x00000000c00074a0                test_var_a
-                0x00000000c00074a4                test_var_b
-                0x00000000c00074a8                prog_a_pid
-                0x00000000c00074ac                prog_b_pid
- .bss           0x00000000c00074b0        0x0 build/init.o
- *fill*         0x00000000c00074b0       0x10 
- .bss           0x00000000c00074c0      0x408 build/interrupt.o
- .bss           0x00000000c00078c8        0x0 build/timer.o
- .bss           0x00000000c00078c8        0x0 build/debug.o
- .bss           0x00000000c00078c8        0x0 build/memory.o
- .bss           0x00000000c00078c8        0x0 build/bitmap.o
- .bss           0x00000000c00078c8        0x0 build/string.o
- .bss           0x00000000c00078c8        0x6 build/thread.o
- .bss           0x00000000c00078ce        0x0 build/list.o
- *fill*         0x00000000c00078ce        0x2 
- .bss           0x00000000c00078d0       0x1c build/console.o
- .bss           0x00000000c00078ec        0x0 build/sync.o
- .bss           0x00000000c00078ec       0x14 build/keyboard.o
- .bss           0x00000000c0007900        0x0 build/ioqueue.o
- .bss           0x00000000c0007900       0x6c build/tss.o
- .bss           0x00000000c000796c        0x0 build/process.o
- .bss           0x00000000c000796c        0x0 build/syscall.o
- .bss           0x00000000c000796c        0x0 build/syscall-init.o
+ .bss           0x00000000c0007160       0x10 build/main.o
+                0x00000000c0007160                test_var_a
+                0x00000000c0007164                test_var_b
+                0x00000000c0007168                prog_a_pid
+                0x00000000c000716c                prog_b_pid
+ .bss           0x00000000c0007170        0x0 build/init.o
+ *fill*         0x00000000c0007170       0x10 
+ .bss           0x00000000c0007180      0x408 build/interrupt.o
+ .bss           0x00000000c0007588        0x0 build/timer.o
+ .bss           0x00000000c0007588        0x0 build/debug.o
+ .bss           0x00000000c0007588        0x0 build/memory.o
+ .bss           0x00000000c0007588        0x0 build/bitmap.o
+ .bss           0x00000000c0007588        0x0 build/string.o
+ .bss           0x00000000c0007588        0x6 build/thread.o
+ .bss           0x00000000c000758e        0x0 build/list.o
+ *fill*         0x00000000c000758e        0x2 
+ .bss           0x00000000c0007590       0x1c build/console.o
+ .bss           0x00000000c00075ac        0x0 build/sync.o
+ .bss           0x00000000c00075ac       0x14 build/keyboard.o
+ .bss           0x00000000c00075c0        0x0 build/ioqueue.o
+ .bss           0x00000000c00075c0       0x6c build/tss.o
+ .bss           0x00000000c000762c        0x0 build/process.o
+ .bss           0x00000000c000762c        0x0 build/syscall.o
+ .bss           0x00000000c000762c        0x0 build/syscall-init.o
+ .bss           0x00000000c000762c        0x0 build/stdio.o
  *(COMMON)
- *fill*         0x00000000c000796c       0x14 
- COMMON         0x00000000c0007980      0x424 build/interrupt.o
-                0x00000000c0007980                intr_name
-                0x00000000c0007ba0                idt_table
- COMMON         0x00000000c0007da4        0x4 build/timer.o
-                0x00000000c0007da4                ticks
- *fill*         0x00000000c0007da8       0x18 
- COMMON         0x00000000c0007dc0       0x6c build/memory.o
-                0x00000000c0007dc0                user_pool
-                0x00000000c0007dec                kernel_vaddr
-                0x00000000c0007e00                kernel_pool
- COMMON         0x00000000c0007e2c       0x40 build/thread.o
-                0x00000000c0007e2c                thread_ready_list
-                0x00000000c0007e3c                thread_all_list
-                0x00000000c0007e4c                main_thread
-                0x00000000c0007e50                pid_lock
- *fill*         0x00000000c0007e6c       0x14 
- COMMON         0x00000000c0007e80       0x6c build/keyboard.o
-                0x00000000c0007e80                kbd_buf
- *fill*         0x00000000c0007eec       0x14 
- COMMON         0x00000000c0007f00       0x80 build/syscall-init.o
-                0x00000000c0007f00                syscall_table
-                0x00000000c0007f80                . = ALIGN ((. != 0x0)?0x4:0x1)
-                0x00000000c0007f80                . = ALIGN (0x4)
-                0x00000000c0007f80                . = SEGMENT_START ("ldata-segment", .)
-                0x00000000c0007f80                . = ALIGN (0x4)
-                0x00000000c0007f80                _end = .
+ *fill*         0x00000000c000762c       0x14 
+ COMMON         0x00000000c0007640      0x424 build/interrupt.o
+                0x00000000c0007640                intr_name
+                0x00000000c0007860                idt_table
+ COMMON         0x00000000c0007a64        0x4 build/timer.o
+                0x00000000c0007a64                ticks
+ *fill*         0x00000000c0007a68       0x18 
+ COMMON         0x00000000c0007a80       0x6c build/memory.o
+                0x00000000c0007a80                user_pool
+                0x00000000c0007aac                kernel_vaddr
+                0x00000000c0007ac0                kernel_pool
+ COMMON         0x00000000c0007aec       0x40 build/thread.o
+                0x00000000c0007aec                thread_ready_list
+                0x00000000c0007afc                thread_all_list
+                0x00000000c0007b0c                main_thread
+                0x00000000c0007b10                pid_lock
+ *fill*         0x00000000c0007b2c       0x14 
+ COMMON         0x00000000c0007b40       0x6c build/keyboard.o
+                0x00000000c0007b40                kbd_buf
+ *fill*         0x00000000c0007bac       0x14 
+ COMMON         0x00000000c0007bc0       0x80 build/syscall-init.o
+                0x00000000c0007bc0                syscall_table
+                0x00000000c0007c40                . = ALIGN ((. != 0x0)?0x4:0x1)
+                0x00000000c0007c40                . = ALIGN (0x4)
+                0x00000000c0007c40                . = SEGMENT_START ("ldata-segment", .)
+                0x00000000c0007c40                . = ALIGN (0x4)
+                0x00000000c0007c40                _end = .
                 [!provide]                        PROVIDE (end, .)
-                0x00000000c0007f80                . = DATA_SEGMENT_END (.)
+                0x00000000c0007c40                . = DATA_SEGMENT_END (.)
 
 .stab
  *(.stab)
@@ -557,6 +570,7 @@ LOAD build/syscall-init.o
  .comment       0x0000000000000034       0x35 build/process.o
  .comment       0x0000000000000034       0x35 build/syscall.o
  .comment       0x0000000000000034       0x35 build/syscall-init.o
+ .comment       0x0000000000000034       0x35 build/stdio.o
 
 .debug
  *(.debug)
