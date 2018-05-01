@@ -91,4 +91,6 @@ struct gdt_desc
 #define false 0
 #define PG_SIZE 4096
 
+#define UNUSED __attribute__ ((unused))
+
 #endif //!_KERNEL_GLOBAL_H_

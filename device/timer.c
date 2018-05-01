@@ -15,6 +15,8 @@
 #define READ_WRITE_LATCH   3
 #define PIT_CONTROL_PORT   0x43
 
+#define mil_seconds_per_intr (1000 / IRQ0_FREQUENCY)
+
 uint32_t ticks;
 
 static void intr_timer_handler()
@@ -45,6 +47,23 @@ static void frequency_set(uint8_t counter_port, uint8_t counter_no, uint8_t rwl,
     outb(counter_port, (uint8_t)counter_value);
     /* 再写入counter_value的高8位 */
     outb(counter_port, (uint8_t)counter_value >> 8);
+}
+
+static void ticks_to_sleep(uint32_t sleep_ticks)
+{
+    uint32_t start_tick = ticks;
+
+    while (ticks - start_tick < sleep_ticks)
+    {
+        thread_yield();
+    }
+}
+
+void mtime_sleep(uint32_t m_seconds)
+{
+    uint32_t sleep_ticks = DIV_ROUND_UP(m_seconds, mil_seconds_per_intr);
+    ASSERT(sleep_ticks > 0);
+    ticks_to_sleep(sleep_ticks);
 }
 
 /* 初始化PIT8253 */

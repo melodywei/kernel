@@ -15,9 +15,20 @@ struct list thread_ready_list;
 struct list thread_all_list;
 static struct list_elem *thread_tag;
 
+task_struct *idle_thread;
+
 struct lock pid_lock;
 
 extern void switch_to(task_struct *cur, task_struct *next);
+
+static void idle(void *arg UNUSED)
+{
+    while (1)
+    {
+        thread_block(TASK_BLOCKED);
+        asm volatile("sti; hlt" ::: "memory");
+    }
+}
 
 static pid_t allocate_pid()
 {
@@ -135,6 +146,11 @@ void schedule()
        /* 若此线程需要某事件发生后才能继续上cpu运行,
        不需要将其加入队列,因为当前线程不在就绪队列中。*/
     }
+
+    if(list_empty(&thread_ready_list))
+    {
+        thread_unblock(idle_thread);
+    }
   
     ASSERT(!list_empty(&thread_ready_list));
     thread_tag = NULL;     // thread_tag清空
@@ -185,6 +201,18 @@ void thread_unblock(task_struct* pthread)
    intr_set_status(old_status);
 }
 
+void thread_yield()
+{
+    task_struct *cur = running_thread();
+    enum intr_status old_status = intr_disable();
+    ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
+
+    list_append(&thread_ready_list, &cur->general_tag);
+    cur->status = TASK_READY;
+    schedule();
+    intr_set_status(old_status);
+}
+
 
 void thread_init()
 {
@@ -195,5 +223,6 @@ void thread_init()
     lock_init(&pid_lock);
 
     make_main_thread();
+    idle_thread = thread_start("idle", 10, idle, NULL);
     put_str("thread_init done\n");
 }

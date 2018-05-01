@@ -359,7 +359,8 @@ void *sys_malloc(uint32_t size)
             intr_set_status(old_status);
         }
 
-        b = elem2entry(struct mem_block, free_elem, list_pop(&descs[desc_idx].free_list));
+        b = elem2entry(struct mem_block, free_elem, list_pop(&(descs[desc_idx].free_list)));
+        
         memset(b, 0, descs[desc_idx].block_size);
         a = block2arena(b);
         a->cnt--;
@@ -497,12 +498,12 @@ void sys_free(void* ptr)
         else 
         { 
             PF = PF_USER;
-             mem_pool = &user_pool;
+            mem_pool = &user_pool;
         }
 
         lock_acquire(&mem_pool->lock);
         struct mem_block* b = ptr;
-        struct arena* a = block2arena(b);      // 把mem_block转换成arena,获取元>  信息  
+        struct arena* a = block2arena(b);      // 把mem_block转换成arena,获取元信息  
         ASSERT(a->large == 0 || a->large == 1);
         if (a->desc == NULL && a->large == true) 
         { // 大于1024的内存

@@ -102,5 +102,5 @@ void thread_init();
 
 void thread_unblock(task_struct* pthread);
 void thread_block(task_status stat);
-
+void thread_yield();
 #endif //!_THREAD_THREAD_H_

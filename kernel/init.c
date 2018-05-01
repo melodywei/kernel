@@ -8,6 +8,7 @@
 #include "../device/keyboard.h"
 #include "../userprog/tss.h"
 #include "../userprog/syscall-init.h"
+#include "../device/ide.h"
 
 void init_all()
 {
@@ -20,4 +21,7 @@ void init_all()
     keyboard_init();
     tss_init();
 	syscall_init();
+    intr_enable();    // 后面的ide_init需要打开中断
+    //ide_init();       // 初始化硬盘
+
 }
