@@ -9,6 +9,7 @@
 #include "../userprog/tss.h"
 #include "../userprog/syscall-init.h"
 #include "../device/ide.h"
+#include "../fs/file.h"
 
 void init_all()
 {
@@ -22,6 +23,6 @@ void init_all()
     tss_init();
 	syscall_init();
     intr_enable();    // 后面的ide_init需要打开中断
-    //ide_init();       // 初始化硬盘
-
+    ide_init();       // 初始化硬盘
+    filesys_init();
 }

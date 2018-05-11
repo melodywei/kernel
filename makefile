@@ -17,7 +17,7 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/print.o $(BUILD_DIR)/init.o $(BUILD_DIR)
 	  $(BUILD_DIR)/console.o $(BUILD_DIR)/sync.o $(BUILD_DIR)/keyboard.o \
 	  $(BUILD_DIR)/ioqueue.o $(BUILD_DIR)/tss.o  $(BUILD_DIR)/process.o \
 	  $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall-init.o $(BUILD_DIR)/stdio.o \
-	  $(BUILD_DIR)/ide.o $(BUILD_DIR)/stdio-kernel.o
+	  $(BUILD_DIR)/ide.o $(BUILD_DIR)/stdio-kernel.o $(BUILD_DIR)/fs.o
 
 ##############     c代码编译     ###############
 $(BUILD_DIR)/main.o: kernel/main.c lib/kernel/print.h \
@@ -117,6 +117,11 @@ $(BUILD_DIR)/stdio-kernel.o: lib/kernel/stdio-kernel.c lib/kernel/stdio-kernel.h
         lib/kernel/print.h lib/stdio.h lib/stdint.h device/console.h kernel/global.h
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/fs.o: fs/fs.c fs/fs.h lib/stdint.h device/ide.h thread/sync.h lib/kernel/list.h \
+    kernel/global.h thread/thread.h lib/kernel/bitmap.h kernel/memory.h fs/super_block.h \
+    fs/inode.h fs/dir.h lib/kernel/stdio-kernel.h lib/string.h lib/stdint.h kernel/debug.h \
+        kernel/interrupt.h lib/kernel/print.h
+	$(CC) $(CFLAGS) $< -o $@
 
 
 

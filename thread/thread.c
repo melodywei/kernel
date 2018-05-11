@@ -92,6 +92,19 @@ void init_thread(task_struct* pthread, char* name, int prio)
 
     // self_kstack是线程自己在内核态下使用的栈顶地址 
     pthread->self_kstack = (uint32_t*)((uint32_t)pthread + PG_SIZE);
+
+    pthread->fd_table[0] = 0;
+    pthread->fd_table[1] = 1;
+    pthread->fd_table[2] = 2;
+
+    uint8_t fd_idx = 3;
+
+    while(fd_idx < MAX_FILES_OPEN_PER_PROC)
+    {
+        pthread->fd_table[fd_idx++] = -1;
+    }
+
+
     pthread->stack_magic = 0x19971234;     // 自定义的魔数，检查栈溢出
 }
 

@@ -6,6 +6,8 @@
 #include "../lib/kernel/bitmap.h"
 #include "../kernel/memory.h"
 
+#define MAX_FILES_OPEN_PER_PROC 8
+
 typedef void thread_func(void*);
 
 typedef int16_t pid_t;
@@ -77,6 +79,8 @@ typedef struct tag_task_struct
     uint8_t ticks;  // 线程执行的时间
 
     uint32_t elapsed_ticks;  // 线程已经执行的时间
+
+    int32_t fd_table[MAX_FILES_OPEN_PER_PROC];
 
     struct list_elem general_tag;
 
