@@ -66,3 +66,13 @@ void free(void *ptr)
 {
     _syscall1(SYS_FREE, ptr);
 }
+
+int open(const char *pathname, int flags)
+{
+    return _syscall2(SYS_OPEN, pathname, flags);
+}
+
+int close(int fd)
+{
+    return _syscall1(SYS_CLOSE, fd);
+}
