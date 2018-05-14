@@ -40,4 +40,6 @@ int32_t get_free_slot_in_global();
 int32_t pcb_fd_install(int32_t globa_fd_idx);
 int32_t file_open(uint32_t inode_no, uint8_t flag);
 int32_t file_close(struct file *file);
+int32_t file_write(struct file *file, const void *buf, uint32_t count);
+int32_t file_read(struct file *file, void *buf, uint32_t count);
 #endif // !_FS_FILE_H_

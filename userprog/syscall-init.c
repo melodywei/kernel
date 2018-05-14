@@ -18,12 +18,6 @@ uint32_t sys_getpid(void)
     return running_thread()->pid;
 }
 
-uint32_t sys_write(char *str)
-{
-    console_put_str(str);
-    return strlen(str);
-}
-
 /* 初始化系统调用 */
 void syscall_init(void)
 {
@@ -34,5 +28,8 @@ void syscall_init(void)
     syscall_table[SYS_FREE] = sys_free;
     syscall_table[SYS_OPEN] = sys_open;
     syscall_table[SYS_CLOSE] = sys_close;
+    syscall_table[SYS_READ] = sys_read;
+    syscall_table[SYS_LSEEK] = sys_lseek;
+    syscall_table[SYS_UNLINK] = sys_unlink;
     put_str("syscall_init done\n");
 }

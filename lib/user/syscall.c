@@ -52,9 +52,9 @@ uint32_t getpid()
     return _syscall0(SYS_GETPID);
 }
 
-uint32_t write(char *str)
+uint32_t write(int32_t fd, const void *buf, uint32_t count)
 {
-    return _syscall1(SYS_WRITE, str);
+    return _syscall3(SYS_WRITE, fd, buf, count);
 }
 
 void *malloc(uint32_t size)
@@ -75,4 +75,19 @@ int open(const char *pathname, int flags)
 int close(int fd)
 {
     return _syscall1(SYS_CLOSE, fd);
+}
+
+int32_t read(int32_t fd, void *buf, uint32_t count)
+{
+    return _syscall3(SYS_READ, fd, buf, count);
+}
+
+int32_t lseek(int32_t fd, int32_t offset, uint8_t whence)
+{
+     return _syscall3(SYS_LSEEK, fd, offset, whence);
+}
+
+int32_t unlink(const char *pathname)
+{
+    return _syscall1(SYS_UNLINK, pathname);
 }

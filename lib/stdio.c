@@ -4,6 +4,7 @@
 #include "string.h"
 #include "./user/syscall.h"
 #include "./kernel/print.h"
+#include "../fs/file.h"
 
 #define va_start(ap, v) ap = (va_list)&v // 把ap指向第一个固定参数v
 #define va_arg(ap, t) *((t *)(ap += 4))  // ap指向下一个参数并返回其值
@@ -100,5 +101,5 @@ uint32_t printf(const char *format, ...)
     char buf[1024] = {0};   // 用于存储拼接后的字符串
     vsprintf(buf, format, args);
     va_end(args);
-    return write(buf);
+    return write(stdout_no, buf, strlen(buf));
 }
