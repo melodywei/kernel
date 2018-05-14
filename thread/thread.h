@@ -88,7 +88,7 @@ typedef struct tag_task_struct
     uint32_t *pgdir;
     struct virtual_addr userprog_vaddr;
     struct mem_block_desc u_block_desc[DESC_CNT];
-   
+    pid_t parent_pid;
     uint32_t stack_magic;   // 栈的边界标记，用来检测栈溢出
 }task_struct;
 

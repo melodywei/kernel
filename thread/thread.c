@@ -20,6 +20,7 @@ task_struct *idle_thread;
 struct lock pid_lock;
 
 extern void switch_to(task_struct *cur, task_struct *next);
+extern void init();
 
 static void idle(void *arg UNUSED)
 {
@@ -233,6 +234,7 @@ void thread_init()
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
 
+    process_execute(init, "init");
     lock_init(&pid_lock);
 
     make_main_thread();

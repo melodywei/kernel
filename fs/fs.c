@@ -11,6 +11,8 @@
 #include "../lib/kernel/list.h"
 #include "../kernel/global.h"
 #include "../device/console.h"
+#include "../device/ioqueue.h"
+#include "../device/keyboard.h"
 
 struct partition *cur_part;
 
@@ -439,18 +441,6 @@ int32_t sys_write(int32_t fd, const void *buf, uint32_t count)
 	}
 }
 
-int32_t sys_read(int32_t fd, void *buf, uint32_t count)
-{
-    if (fd < 0)
-	{
-		return -1;
-	}
-
-	ASSERT(buf == NULL);
-	uint32_t _fd = fd_local2global(fd);
-	return file_read(&file_table[_fd], buf, count);
-}
-
 /* 重置用于文件读写操作的偏移指针,成功时返回新的偏移量,出错时返回-1 */
 int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence)
 {
@@ -544,6 +534,35 @@ int32_t sys_unlink(const char *pathname)
 	sys_free(io_buf);
 	dir_close(searched_record.parent_dir);
 	return 0; // 成功删除文件
+}
+
+/* 从文件描述符fd指向的文件中读取count个字节到buf,若成功则返回读出的字节数,到文件尾则返回-1 */
+int32_t sys_read(int32_t fd, void *buf, uint32_t count)
+{
+	ASSERT(buf != NULL);
+	int32_t ret = -1;
+	if (fd < 0 || fd == stdout_no || fd == stderr_no)
+	{
+		printk("sys_read: fd error\n");
+	}
+	else if (fd == stdin_no)
+	{
+		char *buffer = buf;
+		uint32_t bytes_read = 0;
+		while (bytes_read < count)
+		{
+			*buffer = ioq_getchar(&kbd_buf);
+			bytes_read++;
+			buffer++;
+		}
+		ret = (bytes_read == 0 ? -1 : (int32_t)bytes_read);
+	}
+	else
+	{
+		uint32_t _fd = fd_local2global(fd);
+		ret = file_read(&file_table[_fd], buf, count);
+	}
+	return ret;
 }
 
 /* 在磁盘上搜索文件系统,若没有则格式化分区创建文件系统 */
