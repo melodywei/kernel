@@ -7,6 +7,7 @@
 #include "../lib/user/assert.h"
 #include "../lib/string.h"
 #include "buildin_cmd.h"
+#include "../userprog/exec.h"
 
 #define MAX_ARG_NR 16 // 加上命令名外,最多支持15个参数
 
@@ -188,7 +189,34 @@ void my_shell(void)
         }
         else
         {
-            printf("external command\n");
+            int32_t pid = fork();
+            if (pid)
+            {
+                while(1);
+            }
+            else
+            {
+                make_clear_abs_path(argv[0], final_path);
+                argv[0] = final_path;
+
+                struct stat file_stat;
+                memset(&file_stat, 0, sizeof(struct stat));
+                if (stat(argv[0], &file_stat) == -1)
+                {
+
+                }
+                else 
+                {
+                    execv(argv[0], argv);
+                }
+                while(1);
+            }
+        }
+        int32_t arg_idx = 0;
+        while (arg_idx < MAX_ARG_NR)
+        {
+            argv[arg_idx] = NULL;
+            arg_idx++;
         }
     }
     panic("my_shell: should not be here");
