@@ -88,7 +88,9 @@ typedef struct tag_task_struct
     uint32_t *pgdir;
     struct virtual_addr userprog_vaddr;
     struct mem_block_desc u_block_desc[DESC_CNT];
+    uint32_t cwd_inode_pid;
     pid_t parent_pid;
+    int8_t exit_status;
     uint32_t stack_magic;   // 栈的边界标记，用来检测栈溢出
 }task_struct;
 
@@ -107,4 +109,6 @@ void thread_init();
 void thread_unblock(task_struct* pthread);
 void thread_block(task_status stat);
 void thread_yield();
+void release_pid(pid_t pid);
+pid_t fork_pid(void);
 #endif //!_THREAD_THREAD_H_

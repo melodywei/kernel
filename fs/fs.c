@@ -405,8 +405,21 @@ int32_t sys_close(int32_t fd)
 	int32_t ret = -1; // 返回值默认为-1,即失败
 	if (fd > 2)
 	{
-		uint32_t _fd = fd_local2global(fd);
-		ret = file_close(&file_table[_fd]);
+		uint32_t global_fd = fd_local2global(fd);
+
+		if (is_pipe(fd))
+		{
+			if (--file_table[global_fd].fd_pos == 0)
+			{
+				mfree_page[PK_KERNEL, file_table[global_fd].fd_inode, 1];
+				file_table[global_fd].fd_inode = NULL;
+			}
+			ret = 0;
+		}
+		else
+		{
+			ret = file_close(&file_table[global_fd]);
+		}
 		running_thread()->fd_table[fd] = -1; // 使该文件描述符位可用
 	}
 	return ret;
@@ -427,6 +440,11 @@ int32_t sys_write(int32_t fd, const void *buf, uint32_t count)
 		console_put_str(tmp_buf);
 		return count;
 	}
+	else if (is_pipe(fd))
+	{
+		return pipe_write(fd, buf, count);
+	}
+
 	uint32_t _fd = fd_local2global(fd);
 	struct file *wr_file = &file_table[_fd];
 	if (wr_file->fd_flag & O_WRONLY || wr_file->fd_flag & O_RDWR)
@@ -547,15 +565,26 @@ int32_t sys_read(int32_t fd, void *buf, uint32_t count)
 	}
 	else if (fd == stdin_no)
 	{
-		char *buffer = buf;
-		uint32_t bytes_read = 0;
-		while (bytes_read < count)
+		if (is_pipe(fd))
 		{
-			*buffer = ioq_getchar(&kbd_buf);
-			bytes_read++;
-			buffer++;
+			ret = pipe_read(fd, buf, count);
 		}
-		ret = (bytes_read == 0 ? -1 : (int32_t)bytes_read);
+		else
+		{
+			char *buffer = buf;
+			uint32_t bytes_read = 0;
+			while (bytes_read < count)
+			{
+				*buffer = ioq_getchar(&kbd_buf);
+				bytes_read++;
+				buffer++;
+			}
+			ret = (bytes_read == 0 ? -1 : (int32_t)bytes_read);
+		}
+	}
+	else if(is_pipe(fd))
+	{
+		ret = pipe_read(fd, buf, count);
 	}
 	else
 	{
